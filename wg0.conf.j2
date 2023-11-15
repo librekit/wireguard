@@ -1,0 +1,9 @@
+[Interface]
+PrivateKey = {{ lookup('file', '/etc/wireguard/privatekey') }}
+Address = 10.0.0.1/24
+ListenPort = 51820
+
+# Client Peer Configuration
+[Peer]
+PublicKey = <Client Public Key>
+AllowedIPs = 10.0.0.2/32
