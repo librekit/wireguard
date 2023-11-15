@@ -2,14 +2,6 @@
 - name: Install and Configure WireGuard
   hosts: all
   become: yes
-  vars:
-    wg_interface: "wg0"
-    wg_port: "51820"
-    wg_server_private_key: "your_server_private_key"
-    wg_server_public_key: "your_server_public_key"
-    wg_client_public_key: "your_client_public_key"
-    wg_client_ip: "10.0.0.2/32"
-    wg_server_ip: "10.0.0.1/24"
 
   tasks:
     - name: Update system packages
@@ -29,17 +21,37 @@
         group: root
         mode: 0750
 
-    - name: Generate WireGuard configuration
+    - name: Generate server private key
+      command: wg genkey
+      register: wg_genkey
+      changed_when: false
+
+    - name: Set server private key
+      copy:
+        content: "{{ wg_genkey.stdout }}"
+        dest: /etc/wireguard/privatekey
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Generate server public key
+      command: wg pubkey
+      args:
+        stdin: "{{ wg_genkey.stdout }}"
+      register: wg_genpubkey
+      changed_when: false
+
+    - name: Generate WireGuard configuration for server
       template:
         src: wg0.conf.j2
-        dest: /etc/wireguard/{{ wg_interface }}.conf
+        dest: /etc/wireguard/wg0.conf
         owner: root
         group: root
         mode: 0600
 
     - name: Enable and start WireGuard
       systemd:
-        name: wg-quick@{{ wg_interface }}
+        name: wg-quick@wg0
         enabled: yes
         state: started
 
